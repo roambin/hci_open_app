@@ -1,4 +1,6 @@
-# hci_open_app
+# 人机交互作业：通过笔划打开app
+
+在画布上画出一个符号，打开对应的app，支持自定义。
 
 ## Project setup
 ```
