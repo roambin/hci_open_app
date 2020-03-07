@@ -1,20 +1,30 @@
 <template>
-  <div id="app">
-    <Draw />
-    <Introduction />
-  </div>
+    <div id="app">
+        <Board v-if="mode === 'Board'" />
+        <Draw v-if="mode === 'Draw'" />
+        <el-button-group>
+            <el-button :type="mode === 'Board' ? 'primary' : ''" @click="mode = 'Board'">面板</el-button>
+            <el-button :type="mode === 'Word' ? 'primary' : ''" @click="mode = 'Word'">字母</el-button>
+            <el-button :type="mode === 'Draw' ? 'primary' : ''" @click="mode = 'Draw'">画板</el-button>
+        </el-button-group>
+    </div>
 </template>
 
 <script>
 import Draw from './components/Draw.vue'
-import Introduction from './components/Introduction.vue'
+import Board from "./components/Board.vue";
 
 export default {
-  name: 'App',
-  components: {
-    Draw,
-    Introduction
-  }
+    name: 'App',
+    components: {
+        Board,
+        Draw
+    },
+    data() {
+        return {
+            mode: 'Board'
+        }
+    }
 }
 </script>
 
