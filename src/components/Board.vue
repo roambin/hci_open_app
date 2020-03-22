@@ -45,7 +45,7 @@
     <el-button @click="handleSwitchManageMode" :icon="manageMode ? 'el-icon-finished' : 'el-icon-setting'" />
     <h3>快捷轮盘</h3>
     <p>朝8个方向滑动来打开app</p>
-
+    
     <el-alert v-if="getUrlParams('dev') === '1'">
       <br>indexStack:{{indexStack}}<br>curBoard:{{curBoard}}<br>useBoard:{{useBoard}}<br>schemeBoard:{{schemeBoard}}
     </el-alert>
@@ -81,7 +81,9 @@
         prepIndex: undefined,
         pickBoard: null,
         pickIndex: null,
-        indexStack: []
+        indexStack: [],
+        canvas:null,
+        ctx:null
       }
     },
     created() {
@@ -95,7 +97,6 @@
       }
       this.curBoard = this.schemeBoard;
       this.pickBoard = this.schemeBoard;
-      console.log(this.schemeBoard);
     },
     mounted() {
       this.show();
@@ -107,6 +108,7 @@
       }
     },
     methods:{
+      // 显示canvas画布
       show(){
         this.canvas = this.$refs.canvas;//指定canvas
         this.ctx = this.canvas.getContext("2d");//设置2D渲染区域
@@ -115,7 +117,9 @@
         this.ctx.fillStyle="white";
         this.ctx.fill();
       },
+      // 按下鼠标触发
       canvasDown(e) {
+        console.log("触发mousedown");
         this.canvasMoveUse = true;
         this.startTime = Date.now();
         const canvasX = e.clientX - e.target.offsetLeft;
@@ -123,7 +127,9 @@
         this.moveRecorder.x1 = canvasX;
         this.moveRecorder.y1 = canvasY;
       },
+      // 移动鼠标触发
       canvasMove(e) {
+        console.log("触发mouseover");
         if (this.canvasMoveUse) {
           const canvasX = e.clientX - e.target.offsetLeft;
           const canvasY = e.clientY - e.target.offsetTop + document.documentElement.scrollTop;
@@ -132,7 +138,9 @@
           this.canvasMoveUse = true;
         }
       },
+      // 触发touchdown
       touchDown(e) {
+        console.log("触发touchDown")
         this.canvasMoveUse = true;
         this.startTime = Date.now();
         const canvasX = e.changedTouches[0].clientX - e.target.offsetLeft;
@@ -163,20 +171,25 @@
           }
         },this.canvasTime);
       },
+      // 根据按下鼠标时的位置和当前移动的位置，判断当前的手势方向。
       move(canvasX=null, canvasY=null) {
         if (canvasX !== null && canvasY !== null) {
           this.moveRecorder.x2 = canvasX;
           this.moveRecorder.y2 = canvasY;
         }
+        // 获取当前指向的app
         const index = getIndex(this.moveRecorder);
         if (index !== null) {
           this.pickIndex = index;
         }
+        // 如果上次指向的app和本次不同？
         if (index !== null && this.prepIndex !== index) {
           // console.log(index);
           this.moveRecorder.x1 = canvasX;
           this.moveRecorder.y1 = canvasY;
+          // 如果上一次指向的不是undefined且上次指向的和本次指向的序号相差不为4？
           if (this.prepIndex !== undefined && Math.abs(this.prepIndex - index) === 4) {
+            // 后退，设置当前的挑选幕布为curBoard？
             this.back();
             this.pickBoard = this.curBoard;
           }else if (this.curBoard.type === 'group' && this.curBoard.children[index] !== undefined) {
@@ -199,6 +212,7 @@
           }
         }
       },
+      // 处理跳转
       handleJump(url, param={}) {
         const ua = navigator.userAgent.toLowerCase();
         const isMobile = /mobile/gi.test(ua);
@@ -248,6 +262,7 @@
           window.location.href = url;
         }
       },
+      // 处理切换方式
       handleSwitchItem() {
         if (this.pickBoard.type === 'group') {
           this.pickBoard.type = 'app';
@@ -265,11 +280,14 @@
           }
         }
       },
+      // 切换管理模式
       handleSwitchManageMode() {
+        // 如果当前是管理模式，需要将当前内容保存
         if (this.manageMode) {
           localStorage.setItem('schemeBoard', JSON.stringify(this.schemeBoard));
           this.$message.success({message: "保存成功", duration: 1000})
         }
+        // 切换模式
         this.manageMode = !this.manageMode;
       },
       getUrlParams(key) {

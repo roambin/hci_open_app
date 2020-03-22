@@ -16,6 +16,7 @@ export function getScheme(hashSchemeMap, hash) {
     return matchScheme;
 }
 
+
 export function getHash(canvas, ctx) {
     const imgData = cutWhite(canvas, ctx);
     const aHashValue = aHash(imgData);
