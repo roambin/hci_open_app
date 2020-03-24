@@ -1,17 +1,10 @@
 <template>
 	<div>
-		<!-- mousedown:指针设备按下鼠标时触发 -->
-		<!-- mousemove:指针设备在元素上移动时触发 -->
-		<!-- mouseup:指针设备按钮抬起时触发 -->
-		<!-- mouseleave:指针设备移出某个元素时触发 -->
-		<!-- touchstart:触点与触控设备表面接触时触发 -->
-		<!-- touchmove:触点在触控平面上移动时触发 -->
-		<!-- touchend:触点离开触控平面时触发 -->
 		<canvas
 			id="canvas"
 			ref="canvas"
-			:height="height"
-			:width="width"
+			:height="width"
+			:width="height"
 			style="box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04);"
 			@touchmove.prevent
 			@mousedown="canvasDown($event)"
@@ -38,26 +31,18 @@
 		<!-- 下载当前手势 -->
 		<el-button @click="download" icon="el-icon-camera" />
 		<!-- 清空画布 -->
-		<el-button @click="show">清空当前画布</el-button>
+		<el-button @click="show">清空画布</el-button>
 		<!-- 清空当前结果 -->
-		<el-button
-			@click="clearRecognize"
-			v-loading.fullscreen.lock="isLoadModel"
-			element-loading-text="拼命加载中"
-		>重置搜索内容</el-button>
-		<!-- 管理手势。不需要 -->
-		<!-- <el-button @click="handleManageScheme" icon="el-icon-setting" /> -->
+		<el-button @click="clearRecognize">重置搜索内容</el-button>
 		<h3>手写识别</h3>
-		<p>请在画布中书写字母、数字或汉字，系统将识别您写的文字，并在一旁显示。</p>
+		<p>请在画布中书写字母或数字，系统将识别您写的文字，并在一旁显示。</p>
 	</div>
 </template>
 
 <script>
 /* eslint-disable*/
 import { getSchemeByML } from "../utils/compare";
-// import * as mlModel from "../utils/script.js";
-// import * as tf from "@tensorflow/tfjs";
-import * as ml5 from "../utils/ml5.min.js";
+import * as ocr from "../utils/ocrad.js";
 
 export default {
 	name: "Word",
@@ -71,11 +56,10 @@ export default {
 				document.documentElement.clientWidth * 0.9,
 				document.documentElement.clientHeight * 0.6
 			),
-			isLoadModel: true,
 			canvas: null,
 			ctx: null,
-			canvasMoveUse: false, // 是否触发按下鼠标/屏幕事件
-			startTime: null, // 按下鼠标/屏幕的开始时间
+			canvasMoveUse: false,
+			startTime: null,
 			canvasTime: 1000,
 			model: "",
 			recognizeText: "",
@@ -83,15 +67,15 @@ export default {
 		};
 	},
 	created() {
-		this.loadModel();
 	},
 	mounted() {
-		this.init();
-		this.show();
-		this.onresize = function() {};
+		this.init();	// 初始化，设置画布元素。
+		this.show(); 	// 显示画布的背景
+		window.onresize = function windowResize() {
+		}; // 不知道为什么，添加重绘事件，便不会导致画布的宽高变化。猜测该方法对原始的重绘方法进行了覆盖。
 	},
 	methods: {
-		init() {
+		init(){
 			this.canvas = this.$refs["canvas"];
 			this.ctx = this.canvas.getContext("2d");
 		},
@@ -162,40 +146,21 @@ export default {
 						e.changedTouches[0].clientY -
 						e.target.offsetTop +
 						document.documentElement.scrollTop;
-				this.ctx.lineTo(canvasX, canvasY);
+				this.ctx.lineTo(canvasX, canvasY); // 使用直线连接子路径的终点到x，y坐标的方法。（并不会真正地绘制）。
 				this.ctx.stroke();
 			}
 		},
-		// 这里是识别算法。
+		// 识别手势
 		recognize() {
-			let img = this.ctx.getImageData(
-				0,
-				0,
-				this.canvas.width,
-				this.canvas.height
-			);
-			this.classifier.classify(img, (err, results) => {
-				this.recognizeText += this.getMostLikelyCharacter(results);
-			});
+			let character = ocr(this.ctx);
+			this.recognizeText += character;
 			this.show();
 		},
-		getMostLikelyCharacter(results) {
-			let label = "",
-				labelConfidence = 0;
-
-			results.map((item, index) => {
-				if (item.confidence > labelConfidence) {
-					label = item.label;
-					labelConfidence = item.labelConfidence;
-				}
-			});
-			return label;
-		},
-		// 清空识别的内容
+		// 清除当前搜索内容
 		clearRecognize() {
 			this.recognizeText = "";
 		},
-		// 处理跳转事件 这个应该不用重写
+		// 处理跳转事件
 		handleJump(url, param = {}) {
 			const ua = navigator.userAgent.toLowerCase(); // 获取并测试浏览器UA
 			const isMobile = /mobile/gi.test(ua);
@@ -275,17 +240,6 @@ export default {
 		convertCanvasToImage() {
 			const MIME_TYPE = "image/png";
 			return this.canvas.toDataURL(MIME_TYPE);
-		},
-		// 训练模型
-		async loadModel() {
-			this.isLoadModel = true;
-			const classifier = ml5.imageClassifier(
-				"https://teachablemachine.withgoogle.com/models/WYUO0u-RD/model.json",
-				() => {
-					this.isLoadModel = false;
-				}
-			);
-			this.classifier = classifier;
 		}
 	}
 };
