@@ -24,6 +24,9 @@
 		>你的浏览器不支持canvas</canvas>
 		<br />
 		<p>当前搜索内容：{{this.recognizeText}}</p>
+		推荐：
+		<el-button v-for="v in schemeRecommandList" :key="v" @click="doHandleJump(v)" size="mini">{{ schemeNameMap[v] || v }}</el-button>
+		<br><br>
 		<i class="el-icon-time"></i>
 		<!-- 切换识别速度 -->
 		<el-select v-model="canvasTime" placeholder="识别速度" style="width: 80px">
@@ -38,15 +41,26 @@
 		<!-- 下载当前手势 -->
 		<el-button @click="download" icon="el-icon-camera" />
 		<!-- 清空画布 -->
-		<el-button @click="show">清空当前画布</el-button>
+		<el-button v-show="canvasTime===-1" @click="show">清空画布</el-button>
 		<!-- 清空当前结果 -->
 		<el-button
 			@click="clearRecognize"
 			v-loading.fullscreen.lock="isLoadModel"
 			element-loading-text="拼命加载中"
-		>重置搜索内容</el-button>
+		>重置搜索</el-button>
 		<!-- 管理手势。不需要 -->
 		<!-- <el-button @click="handleManageScheme" icon="el-icon-setting" /> -->
+		<el-button @click="addMode = !addMode">{{addMode ? '✕' : '+'}}</el-button>
+		<el-input v-show="addMode" placeholder="选择或输入scheme" v-model="addAppScheme" class="input-with-select" style="width: 210px;">
+			<el-select v-model="addAppScheme" slot="prepend">
+				<el-option v-for="(v, k) in appOptions" :key="k" :label="k" :value="v">
+					<span style="float: left;margin-right: 10px">{{ k }}</span>
+					<span style="float: right; color: #8492a6;">{{ v }}</span>
+				</el-option>
+			</el-select>
+		</el-input>
+		<el-button v-show="addMode" type="primary" @click="addScheme" plain>+</el-button>
+		<el-button v-show="addMode" type="danger" @click="clearScheme" plain icon="el-icon-refresh-right" />
 		<h3>手写识别</h3>
 		<p>请在画布中书写字母、数字或汉字，系统将识别您写的文字，并在一旁显示。</p>
 	</div>
@@ -58,6 +72,7 @@ import { getSchemeByML } from "../utils/compare";
 // import * as mlModel from "../utils/script.js";
 // import * as tf from "@tensorflow/tfjs";
 import * as ml5 from "../utils/ml5.min.js";
+import {handleJump} from "../utils/jump.js";
 
 export default {
 	name: "Word",
@@ -79,7 +94,28 @@ export default {
 			canvasTime: 1000,
 			model: "",
 			recognizeText: "",
-			classifier: {}
+			classifier: {},
+			schemeRecommandList: [],
+			addMode: false,
+			addAppScheme: null,
+			appOptions: {
+				'微信': 'weixin://',
+				'淘宝': 'taobao://',
+				'QQ': 'mqq://',
+				'微博': 'sinaweibo://',
+				'支付宝': 'alipay://',
+				'知乎': 'zhihu://',
+				'b站': 'bilibili://'
+			},
+			schemeNameMap: {
+				'weixin://': '微信',
+				'taobao://': '淘宝',
+				'mqq://': 'QQ',
+				'sinaweibo://': '微博',
+				'alipay://': '支付宝',
+				'zhihu://': '知乎',
+				'bilibili://': 'b站'
+			}
 		};
 	},
 	created() {
@@ -177,6 +213,7 @@ export default {
 			this.classifier.classify(img, (err, results) => {
 				this.recognizeText += this.getMostLikelyCharacter(results);
 			});
+			this.getSchemeList();
 			this.show();
 		},
 		getMostLikelyCharacter(results) {
@@ -194,73 +231,6 @@ export default {
 		// 清空识别的内容
 		clearRecognize() {
 			this.recognizeText = "";
-		},
-		// 处理跳转事件 这个应该不用重写
-		handleJump(url, param = {}) {
-			const ua = navigator.userAgent.toLowerCase(); // 获取并测试浏览器UA
-			const isMobile = /mobile/gi.test(ua);
-
-			// 非移动端，提示错误信息
-			if (!isMobile) {
-				this.$message.warning({
-					message: "仅在移动端有效",
-					duration: 1000
-				});
-				return;
-			}
-
-			// 若在微信中浏览该页面，无法正常跳转
-			const isWeixin = ua.indexOf("micromessenger") !== -1;
-			if (isWeixin) {
-				this.$message.warning({
-					message: "微信中可能不能正常跳转",
-					duration: 1000
-				});
-			}
-
-			// url拼接参数
-			let isFirst = true;
-			if (param) {
-				for (let k in param) {
-					if (isFirst) {
-						url += "?";
-						isFirst = false;
-					} else {
-						url += "&";
-					}
-					url += k + "=" + param[k];
-				}
-			}
-
-			// 安卓端跳转
-			let iFrame;
-			const u = navigator.userAgent;
-			const isAndroid =
-				u.indexOf("Android") > -1 || u.indexOf("Adr") > -1; //android终端
-			const isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
-			if (isAndroid) {
-				//安卓终端使用iframe
-				iFrame = document.createElement("iframe");
-				iFrame.setAttribute("src", url);
-				iFrame.setAttribute("style", "display:none;");
-				iFrame.setAttribute("height", "0px");
-				iFrame.setAttribute("width", "0px");
-				iFrame.setAttribute("frameborder", "0");
-				document.body.appendChild(iFrame);
-				// 发起请求后这个 iFrame 就没用了，所以把它从 dom 上移除掉
-				iFrame.parentNode.removeChild(iFrame);
-				iFrame = null;
-			} else if (isiOS) {
-				window.location.href = url;
-				setTimeout(() => {
-					this.$message.warning({
-						message: "取消跳转后可能需要刷新",
-						duration: 1000
-					});
-				}, 2000);
-			} else {
-				window.location.href = url;
-			}
 		},
 		// 下载当前画布中的内容
 		download() {
@@ -286,6 +256,35 @@ export default {
 				}
 			);
 			this.classifier = classifier;
+		},
+		// jump app
+		doHandleJump(url) {
+			handleJump(this, url)
+		},
+		addScheme() {
+			let schemeJumpTimes = localStorage.getItem("schemeJumpTimes");
+			schemeJumpTimes = schemeJumpTimes ? JSON.parse(schemeJumpTimes) : {};
+			if (!schemeJumpTimes[this.addAppScheme]) {
+				schemeJumpTimes[this.addAppScheme] = 0;
+				this.$message.success({message: "添加成功", duration: 1000})
+			} else {
+				schemeJumpTimes[this.addAppScheme] = schemeJumpTimes[this.addAppScheme] + 1;
+				this.$message.success({message: "优先级提高", duration: 1000})
+			}
+			localStorage.setItem("schemeJumpTimes", JSON.stringify(schemeJumpTimes));
+			this.addAppScheme = null;
+		},
+		//clear scheme jump times
+		clearScheme() {
+			localStorage.removeItem("schemeJumpTimes");
+			this.$message.success({message: "已清空打开记录", duration: 1000})
+		},
+		// list scheme
+		getSchemeList() {
+			let schemeJumpTimes = localStorage.getItem("schemeJumpTimes");
+			schemeJumpTimes = schemeJumpTimes ? JSON.parse(schemeJumpTimes) : {};
+			//todo
+			this.schemeRecommandList.push("mqq://")
 		}
 	}
 };

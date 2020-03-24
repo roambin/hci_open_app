@@ -57,6 +57,8 @@
 
 <script>
 import {getHash, getScheme} from '../utils/compare'
+import {handleJump} from "../utils/jump.js";
+
 export default {
     name: "Draw",
     data() {
@@ -67,7 +69,12 @@ export default {
             hashSchemeMap: JSON.parse(localStorage.getItem('hashSchemeMap')) || {},
             appOptions: {
                 '微信': 'weixin://',
-                '淘宝': 'taobao://'
+                '淘宝': 'taobao://',
+                'QQ': 'mqq://',
+                '微博': 'sinaweibo://',
+                '支付宝': 'alipay://',
+                '知乎': 'zhihu://',
+                'b站': 'bilibili://'
             },
             schemeList: [],
             manageScheme: false,
@@ -157,7 +164,7 @@ export default {
                 let url = getScheme(this.hashSchemeMap, hash);
                 console.log('scheme: ' + url);
                 if (url) {
-                    this.handleJump(url);
+                    handleJump(this, url);
                 }
             }
             this.clear();
@@ -165,55 +172,6 @@ export default {
         clear(){
             this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
             this.show();
-        },
-        handleJump(url, param={}) {
-            const ua = navigator.userAgent.toLowerCase();
-            const isMobile = /mobile/gi.test(ua);
-            if (!isMobile) {
-                this.$message.warning({message: "仅在移动端有效", duration: 1000});
-                return;
-            }
-            const isWeixin = ua.indexOf('micromessenger') !== -1;
-            if (isWeixin) {
-                this.$message.warning({message: "微信中可能不能正常跳转", duration: 1000});
-            }
-            let isFirst = true;
-            if (param) {
-                for (let k in param) {
-                    if (isFirst) {
-                        url += "?";
-                        isFirst = false;
-                    } else {
-                        url += "&";
-                    }
-                    url += k + "=" + param[k];
-                }
-            }
-            // 安卓端跳转
-            let iFrame;
-            const u = navigator.userAgent;
-            const isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
-            const isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
-            if (isAndroid) {
-                //安卓终端使用iframe
-                iFrame = document.createElement("iframe");
-                iFrame.setAttribute("src", url);
-                iFrame.setAttribute("style", "display:none;");
-                iFrame.setAttribute("height", "0px");
-                iFrame.setAttribute("width", "0px");
-                iFrame.setAttribute("frameborder", "0");
-                document.body.appendChild(iFrame);
-                // 发起请求后这个 iFrame 就没用了，所以把它从 dom 上移除掉
-                iFrame.parentNode.removeChild(iFrame);
-                iFrame = null;
-            } else if (isiOS) {
-                window.location.href = url;
-                setTimeout(() =>{
-                    this.$message.warning({message: "取消跳转后可能需要刷新", duration: 1000})
-                }, 2000);
-            } else {
-                window.location.href = url;
-            }
         },
         handleManageScheme() {
             this.schemeList = [];
