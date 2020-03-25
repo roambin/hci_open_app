@@ -212,9 +212,9 @@ export default {
 			);
 			this.classifier.classify(img, (err, results) => {
 				this.recognizeText += this.getMostLikelyCharacter(results);
+				this.getSchemeList();
+				this.show();
 			});
-			this.getSchemeList();
-			this.show();
 		},
 		getMostLikelyCharacter(results) {
 			let label = "",
@@ -264,7 +264,7 @@ export default {
 		addScheme() {
 			let schemeJumpTimes = localStorage.getItem("schemeJumpTimes");
 			schemeJumpTimes = schemeJumpTimes ? JSON.parse(schemeJumpTimes) : {};
-			if (!schemeJumpTimes[this.addAppScheme]) {
+			if (schemeJumpTimes[this.addAppScheme] === undefined) {
 				schemeJumpTimes[this.addAppScheme] = 0;
 				this.$message.success({message: "添加成功", duration: 1000})
 			} else {
@@ -283,8 +283,23 @@ export default {
 		getSchemeList() {
 			let schemeJumpTimes = localStorage.getItem("schemeJumpTimes");
 			schemeJumpTimes = schemeJumpTimes ? JSON.parse(schemeJumpTimes) : {};
-			//todo
-			this.schemeRecommandList.push("mqq://")
+			let sortList = [];
+			for (let k in schemeJumpTimes) {
+				if (k.toString().startsWith(this.recognizeText)) {
+					sortList.push({'scheme': k, 'count': schemeJumpTimes[k]});
+				}
+			}
+			sortList.sort(function(x, y){
+				return y.count - x.count
+			});
+			console.log(sortList);
+			this.schemeRecommandList = [];
+			for (let i in sortList) {
+				if (i >= 6) {
+					return;
+				}
+				this.schemeRecommandList.push(sortList[i].scheme);
+			}
 		}
 	}
 };
