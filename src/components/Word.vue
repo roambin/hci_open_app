@@ -280,7 +280,7 @@ export default {
 		async loadModel() {
 			this.isLoadModel = true;
 			const classifier = ml5.imageClassifier(
-				"https://teachablemachine.withgoogle.com/models/WYUO0u-RD/model.json",
+				window.location.href + "ocr/model.json",
 				() => {
 					this.isLoadModel = false;
 				}
