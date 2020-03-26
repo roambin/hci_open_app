@@ -3,11 +3,9 @@
         <Board v-if="mode === 'Board'" />
         <Draw v-if="mode === 'Draw'" />
         <Word v-if="mode === 'Word'" />
-        <Word2 v-if="mode === 'Word2'" />
         <el-button-group>
             <el-button :type="mode === 'Board' ? 'primary' : ''" @click="mode = 'Board'">面板</el-button>
             <el-button :type="mode === 'Word' ? 'primary' : ''" @click="mode = 'Word'">字母</el-button>
-<!--            <el-button :type="mode === 'Word2' ? 'primary' : ''" @click="mode = 'Word2'">字母2</el-button>-->
             <el-button :type="mode === 'Draw' ? 'primary' : ''" @click="mode = 'Draw'">画板</el-button>
         </el-button-group>
     </div>
@@ -17,15 +15,13 @@
 import Draw from './components/Draw.vue'
 import Board from "./components/Board.vue";
 import Word from './components/Word.vue';
-import Word2 from './components/WordByOcrad.vue';
 
 export default {
     name: 'App',
     components: {
         Board,
         Draw,
-        Word,
-        Word2
+        Word
     },
     data() {
         return {

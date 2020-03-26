@@ -61,18 +61,20 @@
 		</el-input>
 		<el-button v-show="addMode" type="primary" @click="addScheme" plain>+</el-button>
 		<el-button v-show="addMode" type="danger" @click="clearScheme" plain icon="el-icon-refresh-right" />
-		<h3>手写识别</h3>
+		<h3>手写识别
+			<span @click="isTf = !isTf" style="cursor: pointer">({{ isTf ? "cnn" : "orc" }})</span>
+		</h3>
 		<p>请在画布中书写字母、数字或汉字，系统将识别您写的文字，并在一旁显示。</p>
 	</div>
 </template>
 
 <script>
 /* eslint-disable*/
-import { getSchemeByML } from "../utils/compare";
 // import * as mlModel from "../utils/script.js";
 // import * as tf from "@tensorflow/tfjs";
 import * as ml5 from "../utils/ml5.min.js";
 import {handleJump} from "../utils/jump.js";
+import * as ocr from "../utils/ocrad";
 
 export default {
 	name: "Word",
@@ -115,7 +117,8 @@ export default {
 				'alipay://': '支付宝',
 				'zhihu://': '知乎',
 				'bilibili://': 'b站'
-			}
+			},
+			isTf: true
 		};
 	},
 	created() {
@@ -204,17 +207,24 @@ export default {
 		},
 		// 这里是识别算法。
 		recognize() {
-			let img = this.ctx.getImageData(
-				0,
-				0,
-				this.canvas.width,
-				this.canvas.height
-			);
-			this.classifier.classify(img, (err, results) => {
-				this.recognizeText += this.getMostLikelyCharacter(results);
+			if (this.isTf) {
+				let img = this.ctx.getImageData(
+						0,
+						0,
+						this.canvas.width,
+						this.canvas.height
+				);
+				this.classifier.classify(img, (err, results) => {
+					this.recognizeText += this.getMostLikelyCharacter(results);
+					this.getSchemeList();
+					this.show();
+				});
+			} else {
+				let character = ocr(this.ctx);
+				this.recognizeText += character;
 				this.getSchemeList();
 				this.show();
-			});
+			}
 		},
 		getMostLikelyCharacter(results) {
 			let label = "",
