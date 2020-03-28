@@ -222,6 +222,7 @@ export default {
 			} else {
 				let character = ocr(this.ctx);
 				this.recognizeText += character;
+				this.recognizeText = this.recognizeText.substring(0, this.recognizeText.length - 1);
 				this.getSchemeList();
 				this.show();
 			}
@@ -295,7 +296,8 @@ export default {
 			schemeJumpTimes = schemeJumpTimes ? JSON.parse(schemeJumpTimes) : {};
 			let sortList = [];
 			for (let k in schemeJumpTimes) {
-				if (k.toString().startsWith(this.recognizeText)) {
+				console.log(k.toString().startsWith(this.recognizeText));
+				if (k.toString().toLowerCase().startsWith(this.recognizeText.toLowerCase())) {
 					sortList.push({'scheme': k, 'count': schemeJumpTimes[k]});
 				}
 			}
