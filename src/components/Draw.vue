@@ -50,7 +50,6 @@
                 </el-table-column>
             </el-table>
         </el-dialog>
-        <h3>用笔划打开app</h3>
         <p>请在画布中作画，系统识别后将自动跳转。</p>
     </div>
 </template>
@@ -68,13 +67,10 @@ export default {
             canvasTime: 1000,
             hashSchemeMap: JSON.parse(localStorage.getItem('hashSchemeMap')) || {},
             appOptions: {
-                '微信': 'weixin://',
-                '淘宝': 'taobao://',
-                'QQ': 'mqq://',
-                '微博': 'sinaweibo://',
-                '支付宝': 'alipay://',
-                '知乎': 'zhihu://',
-                'b站': 'bilibili://'
+                '篮球': 'https://tiyu.baidu.com/match/NBA/from/baidu_aladdin',
+                '足球': 'https://tiyu.baidu.com/match/欧冠/from/baidu_aladdin',
+                '网球': 'http://sports.cctv.com/tennis/',
+                '乒乓': 'http://sports.sina.com.cn/others/pingpang.shtml'
             },
             schemeList: [],
             manageScheme: false,
@@ -162,9 +158,8 @@ export default {
                 this.addAppScheme = null;
             } else {
                 let url = getScheme(this.hashSchemeMap, hash);
-                console.log('scheme: ' + url);
                 if (url) {
-                    handleJump(this, url);
+                    window.location.href = url;
                 }
             }
             this.clear();

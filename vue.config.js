@@ -5,7 +5,7 @@ module.exports = {
     // 基本路径
     publicPath: './',
     // 输出文件目录
-    outputDir: 'hci_open_app',
+    outputDir: 'sport_go',
     assetsDir: 'assets', // 静态资源目录 (js, css, img, fonts)
     // eslint-loader 是否在保存的时候检查
     lintOnSave: true,
